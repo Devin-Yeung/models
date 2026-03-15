@@ -8,3 +8,5 @@ docs/plans/
 data/fuzzy_*.json
 .omx/
 */__pycache__/
+# nix artifacts
+/result*
