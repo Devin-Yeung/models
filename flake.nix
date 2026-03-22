@@ -30,6 +30,9 @@
         inherit (pkgs) lib;
 
         craneLib = crane.mkLib pkgs;
+        nixSkippedTest =
+          # TODO: Remove this once the picker-save fetch counter test works
+          "tui::app::tests::picker_save_updates_agents_fetch_counters_for_newly_tracked_agents";
 
         unfilteredRoot = ./.;
         src = lib.fileset.toSource {
@@ -44,7 +47,6 @@
         commonArgs = {
           inherit src;
           strictDeps = true;
-          # todo: remove once tests pass
           doCheck = false;
           buildInputs = [ ];
         };
@@ -55,6 +57,8 @@
           commonArgs
           // {
             inherit cargoArtifacts;
+            doCheck = true;
+            cargoTestExtraArgs = "-- --skip ${nixSkippedTest}";
           }
         );
 
