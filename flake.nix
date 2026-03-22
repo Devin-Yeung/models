@@ -59,12 +59,25 @@
             inherit cargoArtifacts;
             doCheck = true;
             cargoTestExtraArgs = "-- --skip ${nixSkippedTest}";
-            nativeBuildInputs = [ pkgs.makeWrapper ];
 
-            postInstall = ''
-              wrapProgram "$out/bin/models" \
-                --set SSL_CERT_FILE "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
-            '';
+            nativeBuildInputs = with pkgs; [
+              makeWrapper
+              installShellFiles
+            ];
+
+            postInstall =
+              let
+                models = "$out/bin/models";
+              in
+              ''
+                wrapProgram ${models} \
+                  --set SSL_CERT_FILE "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+
+                installShellCompletion --cmd models \
+                      --bash <(${models} completions bash) \
+                      --fish <(${models} completions fish) \
+                      --zsh <(${models} completions zsh)
+              '';
           }
         );
 
