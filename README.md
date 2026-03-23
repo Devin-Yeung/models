@@ -12,7 +12,7 @@ A terminal interface for browsing AI models, benchmarks, coding agents, and prov
 
 ## Highlights
 
-- **3,000+ models** across 85+ providers from [models.dev](https://models.dev) — filter by capability, price, context, and provider category
+- **4,000+ models** across 85+ providers from [models.dev](https://models.dev) — filter by capability, price, context, and provider category
 - **~400 benchmark entries** from [Artificial Analysis](https://artificialanalysis.ai) — compare models head-to-head with scatter plots and radar charts
 - **11+ coding agents** tracked with version detection, changelogs, and GitHub integration
 - **22 provider statuses** monitored live across 7 status page platforms
@@ -57,7 +57,7 @@ models
 
 <video src="https://github.com/user-attachments/assets/2e205916-5998-42b2-b60e-c8ffd7b2a668" controls width="100%"></video>
 
-Navigate with arrow keys (or `j`/`k`), switch tabs with `]`/`[`, search with `/`, and press `?` for context-aware help. See [Getting Started](https://github.com/arimxyer/models/wiki/Getting-Started) for a full walkthrough.
+Navigate with arrow keys (or `j`/`k`), switch tabs with `[`/`]`, search with `/`, and press `?` for context-aware help. See [Getting Started](https://github.com/arimxyer/models/wiki/Getting-Started) for a full walkthrough.
 
 ## Features
 
