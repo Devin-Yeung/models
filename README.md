@@ -16,7 +16,6 @@ A terminal interface for browsing AI models, benchmarks, coding agents, and prov
 - **~400 benchmark entries** from [Artificial Analysis](https://artificialanalysis.ai) — compare models head-to-head with scatter plots and radar charts
 - **11+ coding agents** tracked with version detection, changelogs, and GitHub integration
 - **22 provider statuses** monitored live across 7 status page platforms
-- **CLI + JSON output** for every feature — pipe into scripts, jq, or other tools
 
 ## What's New in v0.11.3
 
