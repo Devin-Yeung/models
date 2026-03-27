@@ -9,6 +9,8 @@ mod provider_category;
 mod status;
 mod tui;
 
+use std::path::PathBuf;
+
 use anyhow::Result;
 use clap::{CommandFactory, Parser, Subcommand};
 use clap_complete::Shell;
@@ -17,6 +19,37 @@ use clap_complete::Shell;
 #[command(name = "models")]
 #[command(about = "CLI/TUI for browsing AI models, benchmarks, and coding agents")]
 #[command(version)]
+#[command(disable_help_subcommand = true)]
+#[command(help_template = "\
+{about}
+
+\x1b[1;4mUsage:\x1b[0m {usage}
+
+\x1b[1;4mCommands:\x1b[0m
+  list           List models, optionally filtered by provider
+  providers      List providers
+  show           Show detailed information about a model
+  search         Search models by name or provider
+
+\x1b[1;4mSetup:\x1b[0m
+  completions    Generate shell completions
+  link           Create shell symlinks for `agents`, `benchmarks`, and `status` commands
+
+\x1b[1;4mAdditional:\x1b[0m
+  agents         Track AI coding agent releases and changelogs
+  benchmarks     Query benchmark data from the command line
+  status         Check AI provider service health
+
+\x1b[1;4mOptions:\x1b[0m
+{options}
+
+\x1b[1;4mExamples:\x1b[0m
+  models                              Launch the interactive TUI
+  models list                         Open the inline model picker
+  models benchmarks list              Open the inline benchmark picker
+  models agents claude                Browse Claude Code releases
+  models link                         Create `agents`, `benchmarks`, and `mstatus` symlinks
+")]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
@@ -81,7 +114,6 @@ enum Commands {
   agents <tool>                 Browse releases for a tool
   agents <tool> --latest        Show latest changelog directly
   agents <tool> --list, -l      List all versions
-  agents <tool> --pick, -p      Alias for the interactive release browser
   agents <tool> --version <v>   Show changelog for a specific version
   agents <tool> --web, -w       Open releases page in browser
 
@@ -89,7 +121,7 @@ enum Commands {
   agents claude                 Browse Claude Code releases
   agents claude --latest        Latest Claude Code changelog
   agents cursor --list          All Cursor versions
-  agents aider --pick           Pick an Aider release interactively")]
+  agents cursor --version 1.0.0 Show a specific Cursor version")]
     Agents {
         #[command(subcommand)]
         command: Option<cli::agents::AgentsCommand>,
@@ -101,16 +133,49 @@ enum Commands {
   models benchmarks list --sort speed --limit 10
   models benchmarks list --creator openai --reasoning
   models benchmarks list --json
-  models benchmarks show gpt-4o
-  models benchmarks show \"Claude Sonnet 4\"")]
+  models benchmarks show gpt-4o              Show benchmark details by slug
+  models benchmarks show \"Claude Sonnet 4\"   Show by display name
+  models benchmarks show gpt-4o --json       Output details as JSON")]
     Benchmarks {
         #[command(subcommand)]
         command: Option<cli::benchmarks::BenchmarksCommand>,
     },
+    /// Check AI provider service health
+    #[command(after_help = "\
+\x1b[1;4mExamples:\x1b[0m
+  models status status            Quick dashboard table
+  models status list              Interactive provider health picker
+  models status list --json       All provider statuses as JSON
+  models status show openai       Detailed OpenAI status
+  models status show anthropic --json
+  models status sources           Manage tracked providers
+  models status sources --json    List all available sources")]
+    Status {
+        #[command(subcommand)]
+        command: Option<cli::status::StatusCommand>,
+    },
+    /// Create shell symlinks for `agents`, `benchmarks`, and `status` commands
+    #[command(after_help = "\
+\x1b[1;4mExamples:\x1b[0m
+  models link                     Create symlinks next to the binary
+  models link --dir ~/.local/bin  Create symlinks in a specific directory
+  models link --status            Check symlink status
+  models link --remove            Remove previously created symlinks")]
+    Link {
+        /// Target directory for symlinks (defaults to binary's directory)
+        #[arg(long)]
+        dir: Option<PathBuf>,
+        /// Remove symlinks instead of creating them
+        #[arg(long)]
+        remove: bool,
+        /// Show current symlink status
+        #[arg(long)]
+        status: bool,
+    },
 }
 
 fn main() -> Result<()> {
-    // Check if invoked as "agents" or "benchmarks" (symlink entry point)
+    // Check if invoked via a symlink alias (e.g. "agents", "benchmarks", "mstatus")
     let binary_name = std::env::args()
         .next()
         .and_then(|s| {
@@ -120,11 +185,13 @@ fn main() -> Result<()> {
         })
         .unwrap_or_default();
 
-    if binary_name == "agents" {
-        return cli::agents::run();
-    }
-    if binary_name == "benchmarks" {
-        return cli::benchmarks::run_with_command(None);
+    let config = config::Config::load().unwrap_or_default();
+    if let Some(kind) = config.match_alias(&binary_name) {
+        return match kind {
+            config::AliasKind::Agents => cli::agents::run(),
+            config::AliasKind::Benchmarks => cli::benchmarks::run(),
+            config::AliasKind::Status => cli::status::run(),
+        };
     }
 
     let cli = Cli::parse();
@@ -139,6 +206,12 @@ fn main() -> Result<()> {
         }
         Some(Commands::Agents { command }) => cli::agents::run_with_command(command)?,
         Some(Commands::Benchmarks { command }) => cli::benchmarks::run_with_command(command)?,
+        Some(Commands::Status { command }) => cli::status::run_with_command(command)?,
+        Some(Commands::Link {
+            dir,
+            remove,
+            status,
+        }) => cli::link::run(dir, remove, status, &config)?,
         None => {
             // Fetch providers before entering async runtime to avoid blocking in async context
             let providers = api::fetch_providers()?;
