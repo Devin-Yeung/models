@@ -6,6 +6,12 @@ on:
     branches:
       - main
 
+# Keep only the newest run per PR or ref so force-pushes do not leave stale
+# Nix builds queued behind newer commits.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 # Magic Nix Cache authenticates to GitHub's cache service with OIDC, so the
 # workflow needs the minimal read + ID token permissions in both jobs.
 permissions:
