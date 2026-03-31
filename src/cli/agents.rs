@@ -161,9 +161,9 @@ fn load_catalog(config: &crate::config::Config) -> Result<Vec<CatalogAgent>> {
             continue;
         }
         entries.push(CatalogAgent {
-            id,
+            id: id.clone(),
             agent: custom.to_agent(),
-            tracked: true,
+            tracked: config.is_tracked(&id),
         });
     }
 

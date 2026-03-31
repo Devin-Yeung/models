@@ -163,13 +163,18 @@ impl AgentsApp {
             }
             let agent = custom.to_agent();
             let installed = detect_installed(&agent);
+            let tracked = config.is_tracked(&id);
             entries.push(AgentEntry {
                 id,
                 agent,
                 github: GitHubData::default(),
                 installed,
-                tracked: true, // Custom agents are tracked by default
-                fetch_status: FetchStatus::Loading, // Tracked, so GitHub fetch will be spawned
+                tracked,
+                fetch_status: if tracked {
+                    FetchStatus::Loading
+                } else {
+                    FetchStatus::NotStarted
+                },
             });
         }
 
